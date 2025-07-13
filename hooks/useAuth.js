@@ -57,9 +57,45 @@ export const AuthProvider = ({ children }) => {
 
   const fetchProfile = async (userId) => {
     try {
-      const { data, error } = await auth.getUserProfile(userId);
+      const { data: profileData, error } = await auth.getUserProfile(userId);
       if (error) throw error;
-      setProfile(data);
+      
+      // Fetch additional role data separately to avoid RLS recursion
+      let enhancedProfile = { ...profileData };
+      
+      if (profileData?.user_type === 'admin' || profileData?.email?.includes('admin')) {
+        try {
+          const { data: adminData } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (adminData) {
+            enhancedProfile.admin_users = [adminData];
+          }
+        } catch (adminError) {
+          console.warn('Could not fetch admin data:', adminError);
+        }
+      }
+      
+      if (profileData?.user_type === 'agent') {
+        try {
+          const { data: agentData } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          if (agentData) {
+            enhancedProfile.agents = [agentData];
+          }
+        } catch (agentError) {
+          console.warn('Could not fetch agent data:', agentError);
+        }
+      }
+      
+      setProfile(enhancedProfile);
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError(err.message);
