@@ -4,15 +4,28 @@ import { useState } from 'react';
 import { Menu, X, Home, Search, User, Heart, MessageCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAuthenticated, userRole, signOut, profile } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const getDashboardLink = () => {
+    switch (userRole) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'agent':
+        return '/agent/dashboard';
+      case 'landlord':
+        return '/landlord/dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,26 +58,33 @@ export default function Navigation() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
-                <Link href="/dashboard">
+                <Link href={getDashboardLink()}>
                   <Button variant="ghost" size="sm">
                     <User className="h-4 w-4 mr-2" />
-                    Dashboard
+                    {profile?.first_name || 'Dashboard'}
                   </Button>
                 </Link>
-                <Link href="/saved">
-                  <Button variant="ghost" size="sm">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Saved
-                  </Button>
-                </Link>
-                <Link href="/messages">
-                  <Button variant="ghost" size="sm">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Messages
-                  </Button>
-                </Link>
+                {(userRole === 'renter' || userRole === 'landlord') && (
+                  <>
+                    <Link href="/saved">
+                      <Button variant="ghost" size="sm">
+                        <Heart className="h-4 w-4 mr-2" />
+                        Saved
+                      </Button>
+                    </Link>
+                    <Link href="/messages">
+                      <Button variant="ghost" size="sm">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Messages
+                      </Button>
+                    </Link>
+                  </>
+                )}
+                <Button variant="ghost" size="sm" onClick={signOut}>
+                  Logout
+                </Button>
               </>
             ) : (
               <>
@@ -80,11 +100,13 @@ export default function Navigation() {
                 </Link>
               </>
             )}
-            <Link href="/list-property">
-              <Button size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                List Property
-              </Button>
-            </Link>
+            {(userRole === 'landlord' || userRole === 'agent') && (
+              <Link href="/list-property">
+                <Button size="sm" variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                  List Property
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -114,17 +136,24 @@ export default function Navigation() {
             </Link>
             
             <div className="border-t border-gray-200 pt-4">
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
-                  <Link href="/dashboard" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
+                  <Link href={getDashboardLink()} className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
                     Dashboard
                   </Link>
-                  <Link href="/saved" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
-                    Saved Properties
-                  </Link>
-                  <Link href="/messages" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
-                    Messages
-                  </Link>
+                  {(userRole === 'renter' || userRole === 'landlord') && (
+                    <>
+                      <Link href="/saved" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
+                        Saved Properties
+                      </Link>
+                      <Link href="/messages" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
+                        Messages
+                      </Link>
+                    </>
+                  )}
+                  <button onClick={signOut} className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600">
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
@@ -136,9 +165,11 @@ export default function Navigation() {
                   </Link>
                 </>
               )}
-              <Link href="/list-property" className="block px-3 py-2 text-base font-medium text-green-600 hover:text-green-700">
-                List Your Property
-              </Link>
+              {(userRole === 'landlord' || userRole === 'agent') && (
+                <Link href="/list-property" className="block px-3 py-2 text-base font-medium text-green-600 hover:text-green-700">
+                  List Your Property
+                </Link>
+              )}
             </div>
           </div>
         </div>

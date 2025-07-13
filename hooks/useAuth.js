@@ -21,7 +21,8 @@ export const AuthProvider = ({ children }) => {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        const { user: currentUser } = await auth.getCurrentUser();
+        const { session } = await auth.getCurrentSession();
+        const currentUser = session?.user;
         if (currentUser) {
           setUser(currentUser);
           await fetchProfile(currentUser.id);
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchProfile = async (userId) => {
     try {
-      const { data, error } = await db.getProfile(userId);
+      const { data, error } = await auth.getUserProfile(userId);
       if (error) throw error;
       setProfile(data);
     } catch (err) {
@@ -64,6 +65,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const getUserRole = () => {
+    if (!profile) return null;
+    
+    // Check if user is admin
+    if (profile.admin_users && profile.admin_users.length > 0) {
+      return 'admin';
+    }
+    
+    // Check if user is agent
+    if (profile.agents && profile.agents.length > 0) {
+      return 'agent';
+    }
+    
+    // Return the user_type from profile
+    return profile.user_type;
+  };
   const signUp = async (email, password, userData) => {
     try {
       setLoading(true);
@@ -101,6 +118,8 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error;
       setUser(null);
       setProfile(null);
+      // Redirect to home page after logout
+      window.location.href = '/';
     } catch (err) {
       setError(err.message);
     } finally {
@@ -131,8 +150,11 @@ export const AuthProvider = ({ children }) => {
     signOut,
     updateProfile,
     isAuthenticated: !!user,
+    userRole: getUserRole(),
     isLandlord: profile?.user_type === 'landlord',
-    isRenter: profile?.user_type === 'renter'
+    isRenter: profile?.user_type === 'renter',
+    isAdmin: getUserRole() === 'admin',
+    isAgent: getUserRole() === 'agent'
   };
 
   return (

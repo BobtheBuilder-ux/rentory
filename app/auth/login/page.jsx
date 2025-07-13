@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -17,6 +21,7 @@ export default function LoginPage() {
     rememberMe: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -29,14 +34,38 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError('');
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Login attempt:', formData);
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        setLoginError(error.message);
+        return;
+      }
+
+      // Get user profile to determine role and redirect
+      const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
+      
+      if (profileData) {
+        // Redirect based on user role
+        if (profileData.admin_users?.length > 0) {
+          router.push('/admin/dashboard');
+        } else if (profileData.agents?.length > 0) {
+          router.push('/agent/dashboard');
+        } else if (profileData.user_type === 'landlord') {
+          router.push('/landlord/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setLoginError('An error occurred during login. Please try again.');
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard or home page
-      window.location.href = '/dashboard';
-    }, 1500);
+    }
   };
 
   return (
@@ -65,6 +94,11 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {loginError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{loginError}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div>

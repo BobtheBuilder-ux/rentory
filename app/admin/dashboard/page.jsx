@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, Building, UserCheck, TrendingUp, Plus, Settings, Shield, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +13,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const { isAuthenticated, isAdmin, loading, profile } = useAuth();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProperties: 0,
@@ -25,7 +29,7 @@ export default function AdminDashboard() {
 
   const [agents, setAgents] = useState([]);
   const [landlords, setLandlords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [showCreateAgent, setShowCreateAgent] = useState(false);
   const [newAgent, setNewAgent] = useState({
     email: '',
@@ -38,12 +42,24 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (!loading && !isAdmin) {
+      router.push('/dashboard');
+      return;
+    }
+
+    if (isAdmin) {
     loadDashboardData();
+    }
   }, []);
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       
       // Load stats
       const statsResponse = await fetch('/api/admin/stats');
@@ -69,7 +85,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -135,7 +151,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  if (loading || dataLoading) {
     return (
       <>
         <Navigation />
@@ -150,6 +166,9 @@ export default function AdminDashboard() {
     );
   }
 
+  if (!isAuthenticated || !isAdmin) {
+    return null; // Will redirect
+  }
   return (
     <>
       <Navigation />
@@ -160,7 +179,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600">Manage agents, landlords, and platform operations</p>
+                <p className="text-gray-600">Welcome, {profile?.first_name}! Manage agents, landlords, and platform operations</p>
               </div>
               <div className="flex items-center space-x-4">
                 <Button className="bg-green-600 hover:bg-green-700">

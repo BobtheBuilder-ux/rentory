@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Eye, MessageCircle, Calendar, Settings, Home, TrendingUp, Users, Building, DollarSign, Edit, Trash2, Star, MapPin, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,19 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LandlordDashboard() {
-  const [user, setUser] = useState({
-    name: 'Sarah Williams',
-    email: 'sarah@example.com',
-    phone: '+234 803 987 6543',
-    type: 'landlord',
-    avatar: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=150',
-    verified: true,
-    rating: 4.8,
-    reviews: 25,
-    memberSince: '2022'
-  });
+  const router = useRouter();
+  const { isAuthenticated, isLandlord, loading, profile } = useAuth();
 
   const [stats, setStats] = useState({
     totalProperties: 8,
@@ -33,120 +26,65 @@ export default function LandlordDashboard() {
     occupancyRate: 85
   });
 
-  const [properties, setProperties] = useState([
-    {
-      id: 1,
-      title: "Modern 3-Bedroom Apartment",
-      location: "Victoria Island, Lagos",
-      price: 2500000,
-      image: "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg?auto=compress&cs=tinysrgb&w=300",
-      bedrooms: 3,
-      bathrooms: 2,
-      type: "Apartment",
-      status: "Available",
-      views: 245,
-      applications: 8,
-      dateAdded: "2024-01-15",
-      featured: true
-    },
-    {
-      id: 2,
-      title: "Luxury 4-Bedroom Duplex",
-      location: "Maitama, Abuja",
-      price: 4200000,
-      image: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg?auto=compress&cs=tinysrgb&w=300",
-      bedrooms: 4,
-      bathrooms: 3,
-      type: "Duplex",
-      status: "Rented",
-      views: 189,
-      applications: 15,
-      dateAdded: "2024-01-12",
-      featured: false
-    },
-    {
-      id: 3,
-      title: "Executive 5-Bedroom Villa",
-      location: "Banana Island, Lagos",
-      price: 8500000,
-      image: "https://images.pexels.com/photos/1438832/pexels-photo-1438832.jpeg?auto=compress&cs=tinysrgb&w=300",
-      bedrooms: 5,
-      bathrooms: 4,
-      type: "Villa",
-      status: "Available",
-      views: 312,
-      applications: 12,
-      dateAdded: "2024-01-08",
-      featured: true
-    }
-  ]);
+  const [properties, setProperties] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      applicantName: "John Doe",
-      applicantEmail: "john@example.com",
-      applicantPhone: "+234 803 123 4567",
-      property: "Modern 3-Bedroom Apartment",
-      status: "Pending",
-      appliedDate: "2024-01-20",
-      avatar: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
-      score: 85
-    },
-    {
-      id: 2,
-      applicantName: "Jane Smith",
-      applicantEmail: "jane@example.com",
-      applicantPhone: "+234 803 234 5678",
-      property: "Executive 5-Bedroom Villa",
-      status: "Approved",
-      appliedDate: "2024-01-18",
-      avatar: "https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=100",
-      score: 92
-    },
-    {
-      id: 3,
-      applicantName: "Mike Johnson",
-      applicantEmail: "mike@example.com",
-      applicantPhone: "+234 803 345 6789",
-      property: "Modern 3-Bedroom Apartment",
-      status: "Under Review",
-      appliedDate: "2024-01-16",
-      avatar: "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=100",
-      score: 78
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/login');
+      return;
     }
-  ]);
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "John Doe",
-      avatar: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100",
-      message: "I'm interested in viewing your 3-bedroom apartment on Victoria Island. When would be a good time?",
-      time: "2 hours ago",
-      unread: true,
-      property: "Modern 3-Bedroom Apartment"
-    },
-    {
-      id: 2,
-      sender: "Jane Smith",
-      avatar: "https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=100",
-      message: "Thank you for approving my application. I'm ready to proceed with the lease signing.",
-      time: "5 hours ago",
-      unread: true,
-      property: "Executive 5-Bedroom Villa"
-    },
-    {
-      id: 3,
-      sender: "Mike Johnson",
-      avatar: "https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&w=100",
-      message: "I have a question about the parking arrangements for the apartment.",
-      time: "1 day ago",
-      unread: false,
-      property: "Modern 3-Bedroom Apartment"
+    if (!loading && !isLandlord) {
+      router.push('/dashboard');
+      return;
     }
-  ]);
 
+    if (isLandlord && profile) {
+      loadDashboardData();
+    }
+  }, [loading, isAuthenticated, isLandlord, profile, router]);
+
+  const loadDashboardData = async () => {
+    try {
+      setDataLoading(true);
+      
+      // Load properties
+      const propertiesResponse = await fetch(`/api/properties?landlord_id=${profile.id}`);
+      if (propertiesResponse.ok) {
+        const propertiesData = await propertiesResponse.json();
+        setProperties(propertiesData.properties || []);
+      }
+
+      // Load applications
+      const applicationsResponse = await fetch(`/api/applications?user_id=${profile.id}&user_type=landlord`);
+      if (applicationsResponse.ok) {
+        const applicationsData = await applicationsResponse.json();
+        setApplications(applicationsData || []);
+      }
+
+      // Load messages
+      const messagesResponse = await fetch(`/api/conversations?user_id=${profile.id}`);
+      if (messagesResponse.ok) {
+        const messagesData = await messagesResponse.json();
+        setMessages(messagesData.slice(0, 3) || []);
+      }
+
+      // Update stats based on real data
+      setStats(prev => ({
+        ...prev,
+        totalProperties: properties.length,
+        activeListings: properties.filter(p => p.status === 'available').length,
+        pendingApplications: applications.filter(a => a.status === 'pending').length
+      }));
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -201,6 +139,24 @@ export default function LandlordDashboard() {
     );
   };
 
+  if (loading || dataLoading) {
+    return (
+      <>
+        <Navigation />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading landlord dashboard...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (!isAuthenticated || !isLandlord) {
+    return null; // Will redirect
+  }
   return (
     <>
       <Navigation />
@@ -211,18 +167,19 @@ export default function LandlordDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <Avatar className="h-12 w-12 mr-4">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url} alt={profile?.first_name} />
+                  <AvatarFallback>
+                    {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Welcome back, {user.name}!
+                    Welcome back, {profile?.first_name}!
                   </h1>
                   <div className="flex items-center text-gray-600">
                     <span>Landlord Dashboard</span>
                     <span className="mx-2">•</span>
-                    <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                    <span>{user.rating} ({user.reviews} reviews)</span>
+                    <span>{properties.length} properties</span>
                   </div>
                 </div>
               </div>
