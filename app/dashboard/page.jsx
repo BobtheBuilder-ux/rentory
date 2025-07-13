@@ -148,7 +148,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/notifications')}>
                   <Bell className="h-4 w-4 mr-2" />
                   Notifications
                   {notifications.filter(n => !n.read).length > 0 && (
@@ -157,7 +157,7 @@ export default function Dashboard() {
                     </Badge>
                   )}
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/settings')}>
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>
@@ -232,7 +232,7 @@ export default function Dashboard() {
                 <TabsContent value="saved" className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-gray-900">Your Saved Properties</h2>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/search')}>
                       <Search className="h-4 w-4 mr-2" />
                       Browse More
                     </Button>
@@ -244,7 +244,7 @@ export default function Dashboard() {
                         <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No saved properties yet</h3>
                         <p className="text-gray-600 mb-4">Start browsing and save properties you're interested in</p>
-                        <Button className="bg-green-600 hover:bg-green-700">
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => router.push('/search')}>
                           <Search className="h-4 w-4 mr-2" />
                           Browse Properties
                         </Button>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                                 </div>
                               </div>
                               <div className="flex flex-col space-y-2">
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => router.push(`/property/${property.id}`)}>
                                   View Details
                                 </Button>
                                 <Button
@@ -301,7 +301,7 @@ export default function Dashboard() {
                 <TabsContent value="applications" className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-gray-900">Your Applications</h2>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/list-property')}>
                       <Plus className="h-4 w-4 mr-2" />
                       New Application
                     </Button>
@@ -313,7 +313,7 @@ export default function Dashboard() {
                         <Building className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
                         <p className="text-gray-600 mb-4">Start applying for properties you're interested in</p>
-                        <Button className="bg-green-600 hover:bg-green-700">
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => router.push('/search')}>
                           <Search className="h-4 w-4 mr-2" />
                           Browse Properties
                         </Button>
@@ -344,7 +344,7 @@ export default function Dashboard() {
                                 <Badge className={application.statusColor}>
                                   {application.status}
                                 </Badge>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" onClick={() => router.push(`/property/${application.property_id}`)}>
                                   View Details
                                 </Button>
                               </div>
@@ -405,19 +405,19 @@ export default function Dashboard() {
                   <CardTitle className="text-lg">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button className="w-full justify-start bg-green-600 hover:bg-green-700">
+                  <Button className="w-full justify-start bg-green-600 hover:bg-green-700" onClick={() => router.push('/search')}>
                     <Search className="h-4 w-4 mr-2" />
                     Search Properties
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/dashboard/alerts')}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Search Alert
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/contact')}>
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Contact Support
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/dashboard/settings')}>
                     <Settings className="h-4 w-4 mr-2" />
                     Update Profile
                   </Button>
@@ -455,7 +455,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       ))}
-                      <Button variant="outline" className="w-full" size="sm">
+                      <Button variant="outline" className="w-full" size="sm" onClick={() => router.push('/messages')}>
                         View All Messages
                       </Button>
                     </div>

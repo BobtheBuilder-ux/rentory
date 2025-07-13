@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +26,8 @@ export default function RegisterPage() {
     agreeToTerms: false,
     marketingEmails: false
   });
+  const { signUp } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -38,24 +42,47 @@ export default function RegisterPage() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!formData.agreeToTerms) {
-      alert('Please agree to the terms and conditions');
+      toast({
+        title: 'Error',
+        description: 'Please agree to the terms and conditions',
+        variant: 'destructive',
+      });
       return;
     }
 
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Registration attempt:', formData);
-      setIsLoading(false);
-      // Redirect to verification page or dashboard
+    const { error } = await signUp(formData.email, formData.password, {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      phone: formData.phone,
+      user_type: formData.userType,
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Please check your email to verify your account.',
+      });
       window.location.href = '/auth/verify-email';
-    }, 2000);
+    }
   };
 
   return (

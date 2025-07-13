@@ -51,17 +51,19 @@ export default function LandlordDashboard() {
     try {
       setDataLoading(true);
       
+      let propertiesData = { properties: [] }; // Initialize with default empty
       // Load properties
       const propertiesResponse = await fetch(`/api/properties?landlord_id=${profile.id}`);
       if (propertiesResponse.ok) {
-        const propertiesData = await propertiesResponse.json();
+        propertiesData = await propertiesResponse.json();
         setProperties(propertiesData.properties || []);
       }
 
+      let applicationsData = []; // Initialize with default empty
       // Load applications
       const applicationsResponse = await fetch(`/api/applications?user_id=${profile.id}&user_type=landlord`);
       if (applicationsResponse.ok) {
-        const applicationsData = await applicationsResponse.json();
+        applicationsData = await applicationsResponse.json();
         setApplications(applicationsData || []);
       }
 
@@ -72,12 +74,15 @@ export default function LandlordDashboard() {
         setMessages(messagesData.slice(0, 3) || []);
       }
 
-      // Update stats based on real data
+      // Calculate stats from fetched data
+      const updatedProperties = propertiesData.properties || [];
+      const updatedApplications = applicationsData || [];
+
       setStats(prev => ({
         ...prev,
-        totalProperties: properties.length,
-        activeListings: properties.filter(p => p.status === 'available').length,
-        pendingApplications: applications.filter(a => a.status === 'pending').length
+        totalProperties: updatedProperties.length,
+        activeListings: updatedProperties.filter(p => p.status === 'available').length,
+        pendingApplications: updatedApplications.filter(a => a.status === 'pending').length
       }));
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -129,14 +134,80 @@ export default function LandlordDashboard() {
     }
   };
 
-  const handleApplicationAction = (applicationId, action) => {
-    setApplications(prev =>
-      prev.map(app =>
-        app.id === applicationId
-          ? { ...app, status: action === 'approve' ? 'Approved' : 'Rejected' }
-          : app
-      )
-    );
+  const handleDeleteProperty = async (propertyId) => {
+    try {
+      const response = await fetch(`/api/properties/${propertyId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setProperties(prev => prev.filter(property => property.id !== propertyId));
+        // Optionally update stats if needed, though it might be recalculated on next load
+      } else {
+        console.error('Failed to delete property');
+        // Handle error, e.g., show a toast message
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      // Handle error
+    }
+  };
+
+  const handleApplicationAction = async (applicationId, action) => {
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: action === 'approve' ? 'Approved' : 'Rejected' }),
+      });
+      if (response.ok) {
+        setApplications(prev =>
+          prev.map(app =>
+            app.id === applicationId
+              ? { ...app, status: action === 'approve' ? 'Approved' : 'Rejected' }
+              : app
+          )
+        );
+      } else {
+        console.error('Failed to update application status');
+        // Handle error, e.g., show a toast message
+      }
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      // Handle error
+    }
+  };
+
+  if (loading || dataLoading) {
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: action === 'approve' ? 'Approved' : 'Rejected' }),
+      });
+      if (response.ok) {
+        setApplications(prev =>
+          prev.map(app =>
+            app.id === applicationId
+              ? { ...app, status: action === 'approve' ? 'Approved' : 'Rejected' }
+              : app
+          )
+        );
+      } else {
+        console.error('Failed to update application status');
+        // Handle error, e.g., show a toast message
+      }
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      // Handle error
+    }
+  };
+
+  const handleDeleteProperty = (propertyId) => {
+    router.push(`/landlord/delete-property/${propertyId}`);
   };
 
   if (loading || dataLoading) {
@@ -184,11 +255,11 @@ export default function LandlordDashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => router.push('/list-property')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Property
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => router.push('/landlord/settings')}>
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>
@@ -287,7 +358,7 @@ export default function LandlordDashboard() {
                 <TabsContent value="properties" className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold text-gray-900">Your Properties</h2>
-                    <Button className="bg-green-600 hover:bg-green-700">
+                    <Button className="bg-green-600 hover:bg-green-700" onClick={() => router.push('/list-property')}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add New Property
                     </Button>
@@ -339,15 +410,15 @@ export default function LandlordDashboard() {
                               </div>
                             </div>
                             <div className="flex flex-col space-y-2">
-                              <Button size="sm" variant="outline">
+                              <Button size="sm" variant="outline" onClick={() => router.push(`/landlord/edit-property/${property.id}`)}>
                                 <Edit className="h-4 w-4 mr-1" />
                                 Edit
                               </Button>
-                              <Button size="sm" variant="outline">
+                              <Button size="sm" variant="outline" onClick={() => router.push(`/property/${property.id}`)}>
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
-                              <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                              <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteProperty(property.id)}>
                                 <Trash2 className="h-4 w-4 mr-1" />
                                 Delete
                               </Button>
@@ -500,15 +571,15 @@ export default function LandlordDashboard() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Property
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/landlord/analytics')}>
                     <TrendingUp className="h-4 w-4 mr-2" />
                     View Analytics
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/messages')}>
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Message Center
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/landlord/settings')}>
                     <Settings className="h-4 w-4 mr-2" />
                     Account Settings
                   </Button>
@@ -541,7 +612,7 @@ export default function LandlordDashboard() {
                         </div>
                       </div>
                     ))}
-                    <Button variant="outline" className="w-full" size="sm">
+                    <Button variant="outline" className="w-full" size="sm" onClick={() => router.push('/messages')}>
                       <MessageCircle className="h-4 w-4 mr-2" />
                       View All Messages
                     </Button>

@@ -148,6 +148,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await auth.signInWithOAuth('google', `${window.location.origin}/auth/callback`);
+      if (error) throw error;
+      return { data, error: null };
+    } catch (err) {
+      setError(err.message);
+      return { data: null, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
@@ -177,6 +192,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyEmail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await auth.verifyEmail();
+      if (error) throw error;
+      return { error: null };
+    } catch (err) {
+      setError(err.message);
+      return { error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     profile,
@@ -184,8 +214,10 @@ export const AuthProvider = ({ children }) => {
     error,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     updateProfile,
+    verifyEmail,
     isAuthenticated: !!user,
     userRole: getUserRole(),
     isLandlord: profile?.user_type === 'landlord',
