@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/admin';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
     const { data, error } = await adminDb.getAgents();
