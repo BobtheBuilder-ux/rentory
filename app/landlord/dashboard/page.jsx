@@ -179,34 +179,8 @@ export default function LandlordDashboard() {
     }
   };
 
-  if (loading || dataLoading) {
-    try {
-      const response = await fetch(`/api/applications/${applicationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: action === 'approve' ? 'Approved' : 'Rejected' }),
-      });
-      if (response.ok) {
-        setApplications(prev =>
-          prev.map(app =>
-            app.id === applicationId
-              ? { ...app, status: action === 'approve' ? 'Approved' : 'Rejected' }
-              : app
-          )
-        );
-      } else {
-        console.error('Failed to update application status');
-        // Handle error, e.g., show a toast message
-      }
-    } catch (error) {
-      console.error('Error updating application status:', error);
-      // Handle error
-    }
-  };
 
-  const handleDeleteProperty = (propertyId) => {
+  const handleNavigateToDeleteProperty = (propertyId) => {
     router.push(`/landlord/delete-property/${propertyId}`);
   };
 

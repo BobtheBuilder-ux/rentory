@@ -182,7 +182,7 @@ export default function AdminDashboard() {
                 <p className="text-gray-600">Welcome, {profile?.first_name}! Manage agents, landlords, and platform operations</p>
               </div>
               <div className="flex items-center space-x-4">
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => router.push('/admin/settings')}>
                   <Shield className="h-4 w-4 mr-2" />
                   System Settings
                 </Button>
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
                           onChange={(e) => setNewAgent(prev => ({ ...prev, licenseNumber: e.target.value }))}
                         />
                       </div>
-                      <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+                      <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" onClick={handleCreateAgent}>
                         Create Agent
                       </Button>
                     </form>
