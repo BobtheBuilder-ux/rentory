@@ -148,6 +148,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signInAdmin = async (email, password) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await signIn(email, password);
+      if (error) {
+        throw error;
+      }
+  
+      const res = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      if (!res.ok) {
+        const { error: adminError } = await res.json();
+        // Sign out the user if they are not an admin
+        await auth.signOut();
+        throw new Error(adminError || 'Invalid credentials or not an admin.');
+      }
+      
+      await fetchProfile(data.user.id);
+      return { data, error: null };
+    } catch (err) {
+      setError(err.message);
+      return { data: null, error: err };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
@@ -214,6 +246,7 @@ export const AuthProvider = ({ children }) => {
     error,
     signUp,
     signIn,
+    signInAdmin,
     signInWithGoogle,
     signOut,
     updateProfile,
