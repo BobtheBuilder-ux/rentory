@@ -27,7 +27,7 @@ BEGIN
         ),
         ARRAY[
             jsonb_build_object('Content-Type', 'application/json'),
-            jsonb_build_object('Authorization', 'Bearer ' || 'YOUR_SUPABASE_SERVICE_ROLE_KEY') -- IMPORTANT: Replace 'YOUR_SUPABASE_SERVICE_ROLE_KEY' with your actual Supabase Service Role Key
+            jsonb_build_object('Authorization', 'Bearer ' || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltaXRvcGxiaGVram91bWRsaGZxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjMzMjAxMiwiZXhwIjoyMDY3OTA4MDEyfQ.ccc67B9JcdhDD54yPtOhOj5ig3U-A07yg2OMV6b54bE')
         ]::jsonb[]
     );
 
