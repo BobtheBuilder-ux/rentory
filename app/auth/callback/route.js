@@ -1,18 +1,7 @@
-import { createRouteHandlerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
 export async function GET(req) {
-  const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({
-    cookies: () => cookieStore,
-  })
-  const { searchParams } = new URL(req.url)
-  const code = searchParams.get('code')
-
-  if (code) {
-    await supabase.auth.exchangeCodeForSession(code)
-  }
-
-  return NextResponse.redirect(new URL('/dashboard', req.url))
+  // Firebase handles the session management on the client side.
+  // This endpoint is now just a redirect.
+  return NextResponse.redirect(new URL('/dashboard', req.url));
 }

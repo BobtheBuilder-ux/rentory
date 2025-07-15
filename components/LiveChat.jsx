@@ -1,213 +1,108 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Bot, User, ChevronsDown } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useRealtime, useMessages } from '@/hooks/useRealtime';
+import { messages } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
+import { Send } from 'lucide-react';
 
-export default function LiveChat() {
+export default function LiveChat({ conversationId, recipientId }) {
   const { user, profile } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isAgentAvailable, setIsAgentAvailable] = useState(false);
-  const scrollAreaRef = useRef(null);
+  const [messageText, setMessageText] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const scrollRef = useRef(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setMessages([
-        {
-          sender: 'bot',
-          text: "Hello! I'm Rentory's AI assistant. How can I help you today?",
-          timestamp: new Date()
-        }
-      ]);
-      // Simulate checking for agent availability
-      setTimeout(() => {
-        setIsAgentAvailable(Math.random() > 0.5);
-      }, 2000);
-    }
-  }, [isOpen]);
+  // Subscribe to messages using our realtime hook
+  useMessages(conversationId, (messages) => {
+    setChatMessages(messages);
+  });
 
+  // Auto scroll to bottom on new messages
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [chatMessages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    const userMessage = {
-      sender: 'user',
-      text: inputValue,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
+    if (!messageText.trim()) return;
 
     try {
-      // Send message to your backend to interact with Gemini
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputValue, history: messages }),
+      await messages.sendMessage({
+        conversation_id: conversationId,
+        sender_id: user.uid,
+        content: messageText,
+        recipient_id: recipientId,
+        read: false
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response from AI');
-      }
-
-      const data = await response.json();
-      const botMessage = {
-        sender: 'bot',
-        text: data.reply,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
+      setMessageText('');
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = {
-        sender: 'bot',
-        text: "I'm having trouble connecting right now. Please try again later.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
+      console.error('Error sending message:', error);
     }
   };
 
-  const requestHumanAgent = () => {
-    setIsTyping(true);
-    setTimeout(() => {
-      const agentMessage = {
-        sender: 'bot',
-        text: "I've notified a human agent. They will join the chat shortly.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, agentMessage]);
-      setIsTyping(false);
-      // Here you would implement logic to actually notify an agent
-    }, 1500);
-  };
-
-  if (!user) return null;
-
   return (
-    <>
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          className="rounded-full w-16 h-16 bg-green-600 hover:bg-green-700 shadow-lg"
-        >
-          {isOpen ? <X className="h-8 w-8" /> : <MessageCircle className="h-8 w-8" />}
-        </Button>
+    <div className="flex flex-col h-[600px] bg-white rounded-lg shadow">
+      {/* Chat Header */}
+      <div className="p-4 border-b">
+        <h3 className="text-lg font-semibold">Chat</h3>
       </div>
 
-      {isOpen && (
-        <div className="fixed bottom-24 right-4 z-50">
-          <Card className="w-80 h-[450px] shadow-xl flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between p-4 bg-gray-50 border-b">
-              <div className="flex items-center space-x-3">
-                <Bot className="h-6 w-6 text-green-600" />
-                <div>
-                  <CardTitle className="text-md">Live Support</CardTitle>
-                  <Badge variant={isAgentAvailable ? "default" : "secondary"} className="mt-1">
-                    {isAgentAvailable ? "Agent Available" : "AI Assistant"}
-                  </Badge>
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {chatMessages.map((message) => {
+            const isOwn = message.sender_id === user?.uid;
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`flex items-start max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
+                  <Avatar
+                    className="h-8 w-8 mr-2"
+                    src={message.sender_profile?.avatar_url}
+                  />
+                  <div
+                    className={`rounded-lg p-3 ${
+                      isOwn
+                        ? 'bg-green-600 text-white ml-2'
+                        : 'bg-gray-100 text-gray-900 mr-2'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <span className="text-xs mt-1 block opacity-70">
+                      {new Date(message.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-              <ScrollArea className="h-[300px] p-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
-                  {messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-end space-x-2 ${
-                        msg.sender === 'user' ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      {msg.sender === 'bot' && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div
-                        className={`max-w-[75%] p-3 rounded-lg ${
-                          msg.sender === 'user'
-                            ? 'bg-green-600 text-white rounded-br-none'
-                            : 'bg-gray-100 text-gray-800 rounded-bl-none'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.text}</p>
-                      </div>
-                      {msg.sender === 'user' && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={profile?.avatar_url} />
-                          <AvatarFallback>
-                            {profile?.first_name?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  ))}
-                  {isTyping && (
-                    <div className="flex items-end space-x-2 justify-start">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
-                      </Avatar>
-                      <div className="p-3 rounded-lg bg-gray-100">
-                        <div className="flex items-center space-x-1">
-                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                          <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"></span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-            <div className="p-4 border-t">
-              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-                <Input
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Type your message..."
-                  autoComplete="off"
-                />
-                <Button type="submit" size="icon" className="bg-green-600 hover:bg-green-700">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-              <Button
-                variant="link"
-                size="sm"
-                className="w-full mt-2 text-xs"
-                onClick={requestHumanAgent}
-              >
-                Request to speak with a human agent
-              </Button>
-            </div>
-          </Card>
+            );
+          })}
+          <div ref={scrollRef} />
         </div>
-      )}
-    </>
+      </ScrollArea>
+
+      {/* Message Input */}
+      <form onSubmit={handleSendMessage} className="p-4 border-t">
+        <div className="flex space-x-2">
+          <Input
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1"
+          />
+          <Button type="submit" size="icon">
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

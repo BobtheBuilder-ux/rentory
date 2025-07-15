@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import supabase from '@/lib/supabase'; // Import the configured Supabase client
-
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -17,58 +15,39 @@ export default function ForgotPassword() {
     setMessage('');
     setError('');
 
-    // First, initiate the Supabase password reset flow to generate the token
-    const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-
-    if (supabaseError) {
-      setError(supabaseError.message);
-      toast({
-        title: 'Error',
-        description: supabaseError.message,
-        variant: 'destructive',
+    try {
+      const response = await fetch('/api/auth/reset-password-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
-    } else {
-      // If Supabase successfully initiated the reset, send the custom email
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        const firstName = user?.user_metadata?.first_name || 'User';
 
-        const { data, error: sendEmailError } = await supabase.functions.invoke('send-email', {
-          body: {
-            to: email,
-            subject: 'Reset Your Rentory Password',
-            template: 'PasswordResetEmail',
-            templateProps: {
-              firstName: firstName,
-              resetLink: `${window.location.origin}/auth/reset-password`, // Supabase will append tokens to this
-            },
-          },
-        });
+      const result = await response.json();
 
-        if (sendEmailError) {
-          console.error('Error sending custom password reset email:', sendEmailError);
-          toast({
-            title: 'Error',
-            description: 'Failed to send custom password reset email. Please try again.',
-            variant: 'destructive',
-          });
-        } else {
-          setMessage('Password reset link sent to your email!');
-          toast({
-            title: 'Success',
-            description: 'Password reset link sent to your email!',
-          });
-        }
-      } catch (err) {
-        console.error('Unexpected error during password reset email sending:', err);
+      if (!response.ok) {
+        setError(result.error || 'Failed to send password reset link.');
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred. Please try again.',
+          description: result.error || 'Failed to send password reset link.',
           variant: 'destructive',
         });
+      } else {
+        setMessage(result.message);
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
       }
+    } catch (err) {
+      console.error('Client-side error during password reset request:', err);
+      setError('An unexpected error occurred. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 

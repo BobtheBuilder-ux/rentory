@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/supabase';
+import { auth, db } from '@/lib/firebase-admin';
 
 export async function POST(request) {
   try {
@@ -39,31 +39,78 @@ export async function POST(request) {
       );
     }
 
-    const { data, error } = await auth.signUp(email, password, {
+    const userRecord = await auth.createUser({
+      email,
+      password,
+      displayName: `${firstName} ${lastName}`,
+      phoneNumber: phone,
+    });
+
+    await auth.setCustomUserClaims(userRecord.uid, { role: userType });
+
+    await db.collection('profiles').doc(userRecord.uid).set({
       first_name: firstName,
       last_name: lastName,
       user_type: userType,
-      phone: phone || null
+      phone: phone || null,
+      email: email,
+      created_at: new Date().toISOString(),
     });
 
-    if (error) {
-      console.error('Registration error:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+    // Generate email verification link
+    const actionCodeSettings = {
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email`, // URL to redirect after verification
+      handleCodeInApp: true,
+    };
+    const verificationLink = await auth.generateEmailVerificationLink(email, actionCodeSettings);
+
+    // Send verification email via our API route
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'user_verification',
+          to: email,
+          userName: firstName,
+          data: {
+            verificationLink: verificationLink,
+          },
+        }),
+      });
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // Log the error but don't block registration success
     }
 
     return NextResponse.json({
-      message: 'Registration successful',
-      user: data.user,
-      session: data.session
+      message: 'Registration successful. Please check your email for verification.',
+      user: userRecord,
     }, { status: 201 });
 
   } catch (error) {
     console.error('API Error:', error);
+    // Firebase Auth errors can be more specific
+    if (error.code === 'auth/email-already-exists') {
+      return NextResponse.json(
+        { error: 'Email already registered. Please use a different email or log in.' },
+        { status: 409 }
+      );
+    } else if (error.code === 'auth/invalid-password') {
+      return NextResponse.json(
+        { error: 'Password is too weak. Please use a stronger password.' },
+        { status: 400 }
+      );
+    } else if (error.code === 'auth/invalid-email') {
+      return NextResponse.json(
+        { error: 'Invalid email address format.' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error during registration.' },
       { status: 500 }
     );
   }

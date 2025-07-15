@@ -1,6 +1,6 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/components/AuthProvider';
+import { AuthProvider } from '@/hooks/useAuth';
 import LiveChat from '@/components/LiveChat';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -20,7 +20,6 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
-          <LiveChat />
         </AuthProvider>
       </body>
     </html>

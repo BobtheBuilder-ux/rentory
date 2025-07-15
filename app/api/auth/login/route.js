@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/supabase';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export async function POST(request) {
   try {
@@ -23,20 +24,14 @@ export async function POST(request) {
       );
     }
 
-    const { data, error } = await auth.signIn(email, password);
-
-    if (error) {
-      console.error('Login error:', error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
-    }
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    const idToken = await user.getIdToken();
 
     return NextResponse.json({
       message: 'Login successful',
-      user: data.user,
-      session: data.session
+      user,
+      token: idToken,
     });
 
   } catch (error) {

@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { uploadPropertyImages, deleteFile } from '@/lib/cloudinary';
+import { toast } from '@/components/ui/use-toast';
 
 export default function ListPropertyPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -113,26 +115,52 @@ export default function ListPropertyPage() {
     }));
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    // In a real app, you would upload to a cloud service
-    const newImages = files.map(file => ({
-      id: Date.now() + Math.random(),
-      file,
-      url: URL.createObjectURL(file)
-    }));
-    
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...newImages]
-    }));
+    if (!files.length) return;
+
+    try {
+      // Upload images to Cloudinary
+      const { data, error } = await uploadPropertyImages(formData.id || 'temp', files);
+      if (error) throw error;
+
+      // Update form data with uploaded images
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...data.map(img => ({
+          id: img.public_id,
+          url: img.url
+        }))]
+      }));
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload images. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const removeImage = (imageId) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter(img => img.id !== imageId)
-    }));
+  const removeImage = async (imageId) => {
+    try {
+      // Delete image from Cloudinary
+      const { error } = await deleteFile(imageId);
+      if (error) throw error;
+
+      // Remove from form data
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter(img => img.id !== imageId)
+      }));
+    } catch (error) {
+      console.error('Error removing image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove image. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const nextStep = () => {

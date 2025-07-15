@@ -16,6 +16,9 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { uploadProfileImage } from '@/lib/cloudinary';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -163,25 +166,17 @@ export default function SettingsPage() {
     if (!file) return;
 
     try {
-      const filePath = `${user.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
+      const { data, error } = await uploadProfileImage(user.id, file);
+      if (error) throw error;
 
-      if (uploadError) throw uploadError;
+      setProfileData(prev => ({ ...prev, avatar_url: data.url }));
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      setProfileData(prev => ({ ...prev, avatar_url: publicUrl }));
-
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (dbError) throw dbError;
+      // Update profile in Firestore
+      const profileRef = doc(db, 'profiles', user.id);
+      await updateDoc(profileRef, { 
+        avatar_url: data.url,
+        avatar_public_id: data.public_id 
+      });
 
       await refreshProfile();
       toast({
@@ -189,10 +184,10 @@ export default function SettingsPage() {
         description: 'Avatar updated successfully!',
       });
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      console.error('Error updating avatar:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload avatar.',
+        description: 'Failed to update avatar. Please try again.',
         variant: 'destructive',
       });
     }
