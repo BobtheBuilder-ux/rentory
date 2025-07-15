@@ -27,6 +27,8 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.development
+.env.production
 
 # vercel
 .vercel
@@ -34,3 +36,39 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+.runtimeconfig.json
+*-service-account.json
+.firebaserc
+
+# Functions
+functions/node_modules/
+functions/.env
+functions/.runtimeconfig.json
+functions/lib/
+functions/coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# Cache directories
+.cache/
+.next/cache/
+
+# Local Netlify folder
+.netlify
+
+# Operating System
+Thumbs.db
