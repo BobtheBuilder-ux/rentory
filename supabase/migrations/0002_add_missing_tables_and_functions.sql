@@ -296,12 +296,12 @@ BEGIN
     INSERT INTO profiles (id, user_type, first_name, last_name, phone)
     VALUES (
         NEW.id,
-        NEW.raw_user_meta_data->>'user_type',
+        COALESCE(NEW.raw_user_meta_data->>'user_type', 'tenant'),
         NEW.raw_user_meta_data->>'first_name',
         NEW.raw_user_meta_data->>'last_name',
         NEW.raw_user_meta_data->>'phone'
     );
-    PERFORM send_welcome_email(NEW.email, NEW.raw_user_meta_data->>'user_type');
+    PERFORM send_welcome_email(NEW.email, COALESCE(NEW.raw_user_meta_data->>'user_type', 'tenant'));
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

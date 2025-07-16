@@ -13,8 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { uploadPropertyImages, deleteFile } from '@/lib/cloudinary';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export default function ListPropertyPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -119,48 +118,32 @@ export default function ListPropertyPage() {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    try {
-      // Upload images to Cloudinary
-      const { data, error } = await uploadPropertyImages(formData.id || 'temp', files);
-      if (error) throw error;
+    // Simulate image upload
+    const newImages = files.map(file => ({
+      id: URL.createObjectURL(file), // Use object URL as a temporary ID
+      url: URL.createObjectURL(file)
+    }));
 
-      // Update form data with uploaded images
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...data.map(img => ({
-          id: img.public_id,
-          url: img.url
-        }))]
-      }));
-    } catch (error) {
-      console.error('Error uploading images:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to upload images. Please try again.',
-        variant: 'destructive'
-      });
-    }
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...newImages]
+    }));
+
+    toast({
+      title: 'Success',
+      description: `${files.length} image(s) uploaded successfully (simulated).`,
+    });
   };
 
   const removeImage = async (imageId) => {
-    try {
-      // Delete image from Cloudinary
-      const { error } = await deleteFile(imageId);
-      if (error) throw error;
-
-      // Remove from form data
-      setFormData(prev => ({
-        ...prev,
-        images: prev.images.filter(img => img.id !== imageId)
-      }));
-    } catch (error) {
-      console.error('Error removing image:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove image. Please try again.',
-        variant: 'destructive'
-      });
-    }
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter(img => img.id !== imageId)
+    }));
+    toast({
+      title: 'Success',
+      description: 'Image removed successfully (simulated).',
+    });
   };
 
   const nextStep = () => {
