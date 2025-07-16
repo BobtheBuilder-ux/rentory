@@ -16,9 +16,7 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { uploadProfileImage } from '@/lib/cloudinary';
+import { uploadProfileImage } from '@/lib/storage';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -171,12 +169,15 @@ export default function SettingsPage() {
 
       setProfileData(prev => ({ ...prev, avatar_url: data.url }));
 
-      // Update profile in Firestore
-      const profileRef = doc(db, 'profiles', user.id);
-      await updateDoc(profileRef, { 
-        avatar_url: data.url,
-        avatar_public_id: data.public_id 
-      });
+      // Update profile in Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: data.url
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
 
       await refreshProfile();
       toast({

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRealtime, useMessages } from '@/hooks/useRealtime';
-import { messages } from '@/lib/db';
+import { useMessages } from '@/hooks/useRealtime';
+import { supabase } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,13 +33,15 @@ export default function LiveChat({ conversationId, recipientId }) {
     if (!messageText.trim()) return;
 
     try {
-      await messages.sendMessage({
+      const { error } = await supabase
+        .from('messages')
+        .insert({
         conversation_id: conversationId,
-        sender_id: user.uid,
+        sender_id: user.id,
         content: messageText,
-        recipient_id: recipientId,
-        read: false
-      });
+        });
+
+      if (error) throw error;
 
       setMessageText('');
     } catch (error) {
@@ -67,7 +69,7 @@ export default function LiveChat({ conversationId, recipientId }) {
                 <div className={`flex items-start max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
                   <Avatar
                     className="h-8 w-8 mr-2"
-                    src={message.sender_profile?.avatar_url}
+                    src={message.profiles?.avatar_url}
                   />
                   <div
                     className={`rounded-lg p-3 ${

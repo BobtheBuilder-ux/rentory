@@ -2,20 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRealtime } from '@/hooks/useRealtime';
-import { messages } from '@/lib/db';
+import { useConversations } from '@/hooks/useRealtime';
+import { supabase } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar } from '@/components/ui/avatar';
 import LiveChat from './LiveChat';
 
 export default function MessageCenter() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
 
   // Subscribe to conversations using our realtime hook
-  useConversations(user?.uid, (conversations) => {
+  useConversations(user?.id, (conversations) => {
     setConversations(conversations);
   });
 
@@ -24,7 +24,7 @@ export default function MessageCenter() {
   };
 
   const getRecipientId = (conversation) => {
-    return conversation.participants.find(id => id !== user?.uid);
+    return conversation.participants.find(id => id !== user?.id);
   };
 
   return (

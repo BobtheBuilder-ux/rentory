@@ -63,7 +63,6 @@ To become Africa's leading rental platform, making quality housing accessible an
 ### Infrastructure
 - **Hosting**: Vercel (Frontend) / Supabase (Backend)
 - **CDN**: Cloudinary for image optimization
-- **Monitoring**: Built-in error tracking and analytics
 
 ## 📁 Project Structure
 
