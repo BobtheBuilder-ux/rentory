@@ -16,9 +16,8 @@ export function AuthProvider({ children }) {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(profileData);
+          .eq('id', session.user.id);
+        setProfile(profileData && profileData.length > 0 ? profileData[0] : null);
       } else {
         setProfile(null);
       }
