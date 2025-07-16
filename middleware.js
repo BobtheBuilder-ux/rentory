@@ -18,12 +18,7 @@ export async function middleware(req) {
             value,
             ...options,
           })
-          const response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          response.cookies.set({
+          res.cookies.set({
             name,
             value,
             ...options,
@@ -35,12 +30,7 @@ export async function middleware(req) {
             value: '',
             ...options,
           })
-          const response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          })
-          response.cookies.set({
+          res.cookies.set({
             name,
             value: '',
             ...options,
@@ -50,7 +40,35 @@ export async function middleware(req) {
     }
   )
 
-  await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('user_type')
+    .eq('id', user?.id)
+    .single();
+
+  const isAdmin = profileData?.user_type === 'admin';
+
+  const { pathname } = req.nextUrl;
+
+  // Allow access to auth pages and API routes
+  if (pathname.startsWith('/auth') || pathname.startsWith('/api/auth')) {
+    return res;
+  }
+
+  // Redirect authenticated non-admin users from admin pages
+  if (pathname.startsWith('/admin') && user && !isAdmin) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/auth/login'; // Redirect to regular login
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Redirect unauthenticated users from protected pages
+  if (!user && !pathname.startsWith('/auth') && !pathname.startsWith('/api')) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/auth/login';
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return res
 }

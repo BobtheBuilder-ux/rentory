@@ -58,6 +58,46 @@ export function AuthProvider({ children }) {
     return { user: data.user, error };
   };
 
+  const signInAdmin = async (email, password) => {
+    try {
+      const response = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: new Error(data.error || 'Admin login failed') };
+      }
+
+      // Set the session explicitly after successful login via the API route
+      if (data.session) {
+        const { error: setSessionError } = await supabase.auth.setSession(data.session);
+        if (setSessionError) {
+          console.error('Error setting session after admin login:', setSessionError);
+          return { error: new Error(setSessionError.message || 'Failed to set user session after admin login.') };
+        }
+      } else {
+        // If for some reason the session is not returned, try to get the user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error('Error fetching user after admin login (no session in response):', userError);
+          return { error: new Error(userError.message || 'Failed to retrieve user session after admin login.') };
+        }
+        setUser(user);
+      }
+
+      return { user: data.user, error: null };
+    } catch (error) {
+      console.error('Frontend Admin Login Error:', error);
+      return { error: new Error('An unexpected error occurred during admin login.') };
+    }
+  };
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -74,6 +114,7 @@ export function AuthProvider({ children }) {
     loading,
     signUp,
     signIn,
+    signInAdmin, // Add signInAdmin to the context value
     signInWithGoogle,
     logout,
     resetPassword,

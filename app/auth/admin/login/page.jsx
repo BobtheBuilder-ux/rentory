@@ -40,7 +40,12 @@ export default function AdminLoginPage() {
       if (error) {
         setLoginError(error.message);
       } else {
-        router.push('/admin/dashboard');
+        // Ensure the session is fully set and context updated before redirecting
+        // A small delay can help prevent race conditions with middleware
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+          router.refresh(); // Force a refresh to re-evaluate middleware
+        }, 100); // Small delay
       }
     } catch (err) {
       setLoginError('An error occurred during login. Please try again.');
