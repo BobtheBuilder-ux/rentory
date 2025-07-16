@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase-admin';
+import { supabase } from '@/lib/db';
 
 export async function POST(request) {
   try {
-    const { sessionCookie } = await request.json();
+    const { accessToken } = await request.json();
 
-    if (!sessionCookie) {
-      return NextResponse.json({ error: 'Session cookie is missing' }, { status: 400 });
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Access token is missing' }, { status: 400 });
     }
 
-    const decodedClaims = await auth.verifySessionCookie(sessionCookie, true); // Check for revoked tokens
-    return NextResponse.json({ user: decodedClaims }, { status: 200 });
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+
+    if (error) {
+      return NextResponse.json({ error: 'Invalid or expired access token' }, { status: 401 });
+    }
+
+    return NextResponse.json({ user }, { status: 200 });
 
   } catch (error) {
-    console.error('Error verifying session cookie:', error);
-    return NextResponse.json({ error: 'Invalid or expired session cookie' }, { status: 401 });
+    console.error('Error verifying session:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

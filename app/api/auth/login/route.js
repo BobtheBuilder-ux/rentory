@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { supabase } from '@/lib/db';
 
 export async function POST(request) {
   try {
@@ -24,29 +23,23 @@ export async function POST(request) {
       );
     }
 
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    const idToken = await user.getIdToken();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
 
     return NextResponse.json({
       message: 'Login successful',
-      user,
-      token: idToken,
+      user: data.user,
+      token: data.session.access_token,
     });
 
   } catch (error) {
     console.error('API Error:', error);
-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-      return NextResponse.json(
-        { error: 'Invalid email or password.' },
-        { status: 401 }
-      );
-    } else if (error.code === 'auth/invalid-email') {
-      return NextResponse.json(
-        { error: 'Invalid email address format.' },
-        { status: 400 }
-      );
-    }
     return NextResponse.json(
       { error: 'Internal server error during login.' },
       { status: 500 }

@@ -37,48 +37,16 @@ export default function LoginPage() {
     setLoginError('');
     
     try {
-      const { user, error } = await signIn(formData.email, formData.password);
+      const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
         setLoginError(error.message);
+        setIsLoading(false);
         return;
       }
 
-      if (user) {
-        // Exchange ID token for session cookie
-        const idToken = await user.getIdToken();
-        const sessionResponse = await fetch('/api/auth/session-login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-        });
+      router.push('/dashboard');
 
-        if (!sessionResponse.ok) {
-          const sessionErrorData = await sessionResponse.json();
-          setLoginError(sessionErrorData.error || 'Failed to establish session.');
-          return;
-        }
-
-        // Get user profile to determine role and redirect
-        const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
-        
-        if (profileData) {
-          // Redirect based on user role
-          if (profileData.admin_users?.length > 0) {
-            router.push('/admin/dashboard');
-          } else if (profileData.agents?.length > 0) {
-            router.push('/agent/dashboard');
-          } else if (profileData.user_type === 'landlord') {
-            router.push('/landlord/dashboard');
-          } else {
-            router.push('/dashboard');
-          }
-        } else {
-          router.push('/dashboard');
-        }
-      }
     } catch (err) {
       setLoginError('An error occurred during login. Please try again.');
     } finally {
@@ -213,44 +181,11 @@ export default function LoginPage() {
                   onClick={async () => {
                     setIsLoading(true);
                     setLoginError('');
-                    const { user, error } = await signInWithGoogle();
+                    const { error } = await signInWithGoogle();
                     if (error) {
                       setLoginError(error.message);
-                    } else if (user) {
-                      // Exchange ID token for session cookie
-                      const idToken = await user.getIdToken();
-                      const sessionResponse = await fetch('/api/auth/session-login', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ idToken }),
-                      });
-
-                      if (!sessionResponse.ok) {
-                        const sessionErrorData = await sessionResponse.json();
-                        setLoginError(sessionErrorData.error || 'Failed to establish session.');
-                        setIsLoading(false); // Ensure loading state is reset on session error
-                        return;
-                      }
-
-                      // Get user profile to determine role and redirect
-                      const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
-                      
-                      if (profileData) {
-                        // Redirect based on user role
-                        if (profileData.admin_users?.length > 0) {
-                          router.push('/admin/dashboard');
-                        } else if (profileData.agents?.length > 0) {
-                          router.push('/agent/dashboard');
-                        } else if (profileData.user_type === 'landlord') {
-                          router.push('/landlord/dashboard');
-                        } else {
-                          router.push('/dashboard');
-                        }
-                      } else {
-                        router.push('/dashboard');
-                      }
+                    } else {
+                      router.push('/dashboard');
                     }
                     setIsLoading(false);
                   }}

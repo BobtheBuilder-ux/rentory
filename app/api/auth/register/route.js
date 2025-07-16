@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase-admin';
+import { supabase } from '@/lib/db';
 
 export async function POST(request) {
   try {
@@ -39,48 +39,30 @@ export async function POST(request) {
       );
     }
 
-    const userRecord = await auth.createUser({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      displayName: `${firstName} ${lastName}`,
-      phoneNumber: phone,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          user_type: userType,
+          phone: phone || null,
+        },
+      },
     });
 
-    await auth.setCustomUserClaims(userRecord.uid, { role: userType });
-
-    await db.collection('profiles').doc(userRecord.uid).set({
-      first_name: firstName,
-      last_name: lastName,
-      user_type: userType,
-      phone: phone || null,
-      email: email,
-      created_at: new Date().toISOString(),
-    });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
 
     return NextResponse.json({
-      message: 'Registration successful.',
-      user: userRecord,
+      message: 'Registration successful. Please check your email to verify your account.',
+      user: data.user,
     }, { status: 201 });
 
   } catch (error) {
     console.error('API Error:', error);
-    // Firebase Auth errors can be more specific
-    if (error.code === 'auth/email-already-exists') {
-      return NextResponse.json(
-        { error: 'Email already registered. Please use a different email or log in.' },
-        { status: 409 }
-      );
-    } else if (error.code === 'auth/invalid-password') {
-      return NextResponse.json(
-        { error: 'Password is too weak. Please use a stronger password.' },
-        { status: 400 }
-      );
-    } else if (error.code === 'auth/invalid-email') {
-      return NextResponse.json(
-        { error: 'Invalid email address format.' },
-        { status: 400 }
-      );
-    }
     return NextResponse.json(
       { error: 'Internal server error during registration.' },
       { status: 500 }
