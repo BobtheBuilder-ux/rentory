@@ -31,7 +31,7 @@ BEGIN
         FROM vault.decrypted_secrets 
         WHERE name = 'RESEND_API_KEY';
     EXCEPTION WHEN OTHERS THEN
-        resend_api_key := 'YOUR_RESEND_API_KEY';
+        resend_api_key := 're_ErgEoLAZ_MgFfrAGriBGZyPTTkZfwrzVD';
     END;
     
     -- Only attempt to send email if we have a valid API key
