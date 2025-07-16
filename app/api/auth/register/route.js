@@ -57,36 +57,8 @@ export async function POST(request) {
       created_at: new Date().toISOString(),
     });
 
-    // Generate email verification link
-    const actionCodeSettings = {
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email`, // URL to redirect after verification
-      handleCodeInApp: true,
-    };
-    const verificationLink = await auth.generateEmailVerificationLink(email, actionCodeSettings);
-
-    // Send verification email via our API route
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/emails`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'user_verification',
-          to: email,
-          userName: firstName,
-          data: {
-            verificationLink: verificationLink,
-          },
-        }),
-      });
-    } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-      // Log the error but don't block registration success
-    }
-
     return NextResponse.json({
-      message: 'Registration successful. Please check your email for verification.',
+      message: 'Registration successful.',
       user: userRecord,
     }, { status: 201 });
 

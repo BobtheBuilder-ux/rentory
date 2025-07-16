@@ -1,12 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  optimizeFonts: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('firebase-admin');
+    } else {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        process: require.resolve('process/browser'),
+        stream: require.resolve('stream-browserify'),
+      };
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'node:process': 'process/browser',
+      };
+    }
+    return config;
   },
 };
 

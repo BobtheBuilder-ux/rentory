@@ -37,29 +37,47 @@ export default function LoginPage() {
     setLoginError('');
     
     try {
-      const { data, error } = await signIn(formData.email, formData.password);
+      const { user, error } = await signIn(formData.email, formData.password);
       
       if (error) {
         setLoginError(error.message);
         return;
       }
 
-      // Get user profile to determine role and redirect
-      const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
-      
-      if (profileData) {
-        // Redirect based on user role
-        if (profileData.admin_users?.length > 0) {
-          router.push('/admin/dashboard');
-        } else if (profileData.agents?.length > 0) {
-          router.push('/agent/dashboard');
-        } else if (profileData.user_type === 'landlord') {
-          router.push('/landlord/dashboard');
+      if (user) {
+        // Exchange ID token for session cookie
+        const idToken = await user.getIdToken();
+        const sessionResponse = await fetch('/api/auth/session-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!sessionResponse.ok) {
+          const sessionErrorData = await sessionResponse.json();
+          setLoginError(sessionErrorData.error || 'Failed to establish session.');
+          return;
+        }
+
+        // Get user profile to determine role and redirect
+        const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
+        
+        if (profileData) {
+          // Redirect based on user role
+          if (profileData.admin_users?.length > 0) {
+            router.push('/admin/dashboard');
+          } else if (profileData.agents?.length > 0) {
+            router.push('/agent/dashboard');
+          } else if (profileData.user_type === 'landlord') {
+            router.push('/landlord/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
         } else {
           router.push('/dashboard');
         }
-      } else {
-        router.push('/dashboard');
       }
     } catch (err) {
       setLoginError('An error occurred during login. Please try again.');
@@ -189,7 +207,55 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setLoginError('');
+                    const { user, error } = await signInWithGoogle();
+                    if (error) {
+                      setLoginError(error.message);
+                    } else if (user) {
+                      // Exchange ID token for session cookie
+                      const idToken = await user.getIdToken();
+                      const sessionResponse = await fetch('/api/auth/session-login', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ idToken }),
+                      });
+
+                      if (!sessionResponse.ok) {
+                        const sessionErrorData = await sessionResponse.json();
+                        setLoginError(sessionErrorData.error || 'Failed to establish session.');
+                        setIsLoading(false); // Ensure loading state is reset on session error
+                        return;
+                      }
+
+                      // Get user profile to determine role and redirect
+                      const { data: profileData } = await fetch('/api/auth/profile').then(res => res.json());
+                      
+                      if (profileData) {
+                        // Redirect based on user role
+                        if (profileData.admin_users?.length > 0) {
+                          router.push('/admin/dashboard');
+                        } else if (profileData.agents?.length > 0) {
+                          router.push('/agent/dashboard');
+                        } else if (profileData.user_type === 'landlord') {
+                          router.push('/landlord/dashboard');
+                        } else {
+                          router.push('/dashboard');
+                        }
+                      } else {
+                        router.push('/dashboard');
+                      }
+                    }
+                    setIsLoading(false);
+                  }}
+                  disabled={isLoading}
+                >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

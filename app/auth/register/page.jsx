@@ -79,9 +79,9 @@ export default function RegisterPage() {
     } else {
       toast({
         title: 'Success',
-        description: 'Please check your email to verify your account.',
+        description: 'Account created successfully!',
       });
-      window.location.href = '/auth/verify-email';
+      window.location.href = '/dashboard'; // Redirect to dashboard or login page
     }
   };
 
