@@ -63,8 +63,25 @@ export async function middleware(req) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Define publicly accessible paths
+  const publicPaths = [
+    '/',
+    '/about',
+    '/blog',
+    '/contact',
+    '/how-it-works',
+    '/pricing',
+    '/property', // This will cover /property/[id]
+    '/resources',
+    '/search',
+    '/success-stories',
+  ];
+
+  // Check if the current path is a public path
+  const isPublicPath = publicPaths.some(path => pathname === path || (path.endsWith('/') && pathname.startsWith(path)));
+
   // Redirect unauthenticated users from protected pages
-  if (!user && !pathname.startsWith('/auth') && !pathname.startsWith('/api')) {
+  if (!user && !pathname.startsWith('/auth') && !pathname.startsWith('/api') && !isPublicPath) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
     return NextResponse.redirect(redirectUrl);
