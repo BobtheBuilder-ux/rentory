@@ -33,9 +33,9 @@ export function AuthProvider({ children }) {
       password,
       options: {
         data: {
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          user_type: userData.userType,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          user_type: userData.user_type,
           phone: userData.phone || null,
         },
       },
