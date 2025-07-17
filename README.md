@@ -15,7 +15,6 @@ To become Africa's leading rental platform, making quality housing accessible an
 ## ✨ Key Features
 
 ### For Renters
-### For Tenants
 - **🔍 Smart Property Search**: Advanced filters for location, price, property type, and amenities
 - **💰 No Agent Fees**: Connect directly with landlords and save thousands in commission
 - **📱 Digital Applications**: Complete rental applications online with document upload
@@ -207,7 +206,7 @@ Real-time messaging system
 ## 🔐 Authentication & Authorization
 
 ### User Roles
-1. **Tenant/Renter**: Search properties, apply for rentals, message landlords
+1. **Tenant**: Search properties, apply for rentals, message landlords
 2. **Landlord**: List properties, manage applications, communicate with tenants
 3. **Agent**: Manage multiple landlords, advanced analytics, lead generation
 4. **Admin**: Platform oversight, user management, system configuration
