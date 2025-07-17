@@ -23,6 +23,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     userType: 'renter',
+    userType: 'tenant',
     agreeToTerms: false,
     marketingEmails: false
   });
@@ -123,8 +124,8 @@ export default function RegisterPage() {
                   className="flex mt-2"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="renter" id="renter" />
-                    <Label htmlFor="renter" className="text-sm">Renter</Label>
+                    <RadioGroupItem value="tenant" id="tenant" />
+                    <Label htmlFor="tenant" className="text-sm">Renter</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="landlord" id="landlord" />
